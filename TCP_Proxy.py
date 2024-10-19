@@ -25,7 +25,7 @@ def hexdump(src, length = 16, show =True):
     
 def recieve_from(connection):
     buffer = b''
-    connection.settimeout(5):
+    connection.settimeout(5)
     try:
         while True:
             data = connection.recv(4096)
@@ -47,3 +47,61 @@ def reponse_handler(buffer):
 def proxy_handler(client_socket, remote_host, remote_port, receive_first):
     remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     remote_socket.connect((remote_host, remote_port))
+
+    if receive_first:
+        remote_buffer = recieve_from(remote_socket)
+        hexdump(remote_buffer)
+
+    remote_buffer = reponse_handler(remote_buffer)
+    if len(remote_buffer):
+        print("[<==] Sending %d bytes to localhost. " % len(remote_buffer))
+        client_socket.send(remote_buffer)
+    while True:
+        local_buffer = recieve_from(client_socket)
+        if len(local_buffer):
+            line ="[==>] Received %d bytes fro localhost. " % len(remote_buffer) 
+            print(line)
+            hexdump(local_buffer)
+
+            local_buffer = request_handler(local_buffer)
+            remote_socket.send(local_buffer)
+            print("[==>] send to remote.")
+
+        remote_buffer = recieve_from(remote_socket)
+        if len(remote_buffer):
+            print("[<==] Recieved  %d bytes from reomote. " % len(remote_buffer))
+            hexdump(remote_buffer)
+
+            remote_buffer = reponse_handler(remote_buffer)
+            client_socket.send(remote_buffer)
+            print("[<==] Sent to localhost. ")
+        if not len(local_buffer) or not len(remote_buffer):
+            client_socket.close()
+            remote_socket.close()
+            print("[*] No more data. Clossing connections.")
+            break
+
+def server_loop(local_host, local_port, 
+                 remote_host, remote_port, receive_first):
+    server = socket.socket(socket.AF_INET, socket. SOCK_STREAM)
+    try:
+        server.bind(local_host, local_port)
+    except Exception as e:
+        print('problem on bind: %r' % e)
+
+
+        print("[!!] Failed to Listen on %s:%d " % (local_host, local_port))
+        print("[!!] Check for other listening sockets or correct permissions. ")
+        sys.exit(0)
+
+    print("[*] Listening on %s: %d" % (local_host, local_port))
+    server.listen(5)
+
+    while True:
+        client_socket, addr = server.accept()
+        # print out the local connection information
+        line = ">Recieved incoming connection from %s:%d" % (addr[0], addr[1])
+        print(line)
+        # start a thread  to talk to the remote host
+        proxy_thread = threading.Thread(target=proxy_handler, args = (client_socket, remote_host, remote_port, receive_first))
+        proxy_thread.start()
