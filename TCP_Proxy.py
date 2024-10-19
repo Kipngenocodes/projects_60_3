@@ -22,3 +22,28 @@ def hexdump(src, length = 16, show =True):
             print(line)
     else:
         return results
+    
+def recieve_from(connection):
+    buffer = b''
+    connection.settimeout(5):
+    try:
+        while True:
+            data = connection.recv(4096)
+            if not data:
+                break
+            buffer += data
+    except Exception as e:
+        pass
+    return buffer
+
+def request_handler(buffer):
+    # perform packet modifications
+    return buffer
+
+def reponse_handler(buffer):
+    # perfom packet modifictions 
+    return buffer
+
+def proxy_handler(client_socket, remote_host, remote_port, receive_first):
+    remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    remote_socket.connect((remote_host, remote_port))
