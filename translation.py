@@ -1,19 +1,18 @@
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 
 def translate_file(input_file, output_file, dest_language='ja'):
-    translator = Translator()
-
     try:
         # Read the contents of the input file
         with open(input_file, 'r', encoding='utf-8') as file:
             text = file.read()
 
-        # Translate the text to the desired language
-        translation = translator.translate(text, dest=dest_language)
+        # Translate the text to the desired language using deep-translator
+        translator = GoogleTranslator(target=dest_language)
+        translation = translator.translate(text)
 
         # Write the translated text to the output file
         with open(output_file, 'w', encoding='utf-8') as file:
-            file.write(translation.text)
+            file.write(translation)
 
         print(f'Translation completed! Translated text saved in "{output_file}".')
 
